@@ -1,13 +1,13 @@
 import { Component, signal } from '@angular/core';
 import { inject } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { LocalStorageAuthService } from '../../core/services/localstorage-auth.service';
+import { Router } from '@angular/router';
+import { AuthService } from '../../core/services/firebase-auth.service';
 import { CommonModule } from '@angular/common';
-
+import { RouterLink } from '@angular/router';
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule,RouterLink],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
@@ -20,8 +20,8 @@ export class LoginComponent {
 
 
   constructor(private fb : FormBuilder, 
-    private auth: LocalStorageAuthService 
-  ){
+    private auth: AuthService,
+    private route: Router  ){
     //sacar el formlogind del formbuilder 
     this.formLogin = this.fb.group({
       'email':['', [Validators.required, Validators.email]],
@@ -33,17 +33,21 @@ export class LoginComponent {
 
   //metodo onsubmit()
   
-async onSubmit(){
-  console.log(this.formLogin.value);
-    try{
-      this.error.set(false);
-      const response = await this.auth.login(this.formLogin.value as any);
-      this.router.navigate([this.navigateTo]);
+  async onSubmit() {
+    if (this.formLogin.invalid) {
+      this.formLogin.markAllAsTouched();
+      return;
     }
-    catch(error){
+    try {
+      await this.auth.login(
+        this.formLogin.controls.email.value!!,
+        this.formLogin.controls.password.value!!
+      );
+      // Navegación solo aquí, no en el servicio
+      this.route.navigate(['/dashboard']);
+    } catch (err: any) {
       this.error.set(true);
     }
-    
   }
 
 
@@ -74,7 +78,6 @@ async onSubmit(){
 
   
 }
-
 
 /* FORMULARIO CON ERRORES Y VALIDACIONES 
 <div class="min-h-screen flex justify-center items-center">

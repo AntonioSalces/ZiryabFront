@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { LocalStorageAuthService} from './localstorage-auth.service';
+import { LocalStorageAuthService} from './firebase-auth.service';
 
 describe('AuthService', () => {
   let service: LocalStorageAuthService;

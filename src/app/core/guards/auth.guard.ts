@@ -1,11 +1,11 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { LocalStorageAuthService } from '../services/localstorage-auth.service';
+import { AuthService } from '../services/firebase-auth.service';
 
 export const authGuard: CanActivateFn = (route, state) => {
-  let auth = inject(LocalStorageAuthService);
+  let auth = inject(AuthService);
   let router = inject(  Router);
-  let authenticated = auth.user()!=null;
+  let authenticated = auth.isAuthenticated()
   if(!authenticated)
     router.navigate(['/login'],{state:{navigateTo:state.url}});
   return authenticated;
