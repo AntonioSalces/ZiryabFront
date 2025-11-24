@@ -3,6 +3,7 @@ import { LoginComponent } from './pages/login/login.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { ClasesComponent } from './pages/clases/clases.component';
+import { RegisterComponent } from './pages/register/register.component';
 
 export const routes: Routes = [
     {
@@ -26,5 +27,9 @@ export const routes: Routes = [
     {
         path:'gestion',
         component:ClasesComponent
+    },
+        {
+        path:'register',
+        component:RegisterComponent
     }
 ];
