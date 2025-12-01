@@ -1,206 +1,64 @@
 import { Component, signal } from '@angular/core';
 import { inject } from '@angular/core';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
-import { LocalStorageAuthService } from '../../../core/services/localstorage-auth.service';
+import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angular/forms';
+import { Router } from '@angular/router';
+import { AuthService } from '../../../core/services/firebase-auth.service'; // ← RUTA CORREGIDA
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [ReactiveFormsModule, CommonModule, RouterLink],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  styleUrl: './login.component.scss',
 })
 export class LoginComponent {
-  error;
-  private router:Router = inject(Router);
-  readonly navigateTo:string = "";
-  formLogin;
-  
-
-
-  constructor(private fb : FormBuilder, 
-    private auth: LocalStorageAuthService 
-  ){
-    //sacar el formlogind del formbuilder 
+  error = signal(false);
+  private router: Router = inject(Router);
+  readonly navigateTo: string = '';
+  formLogin: FormGroup;
+  constructor(
+    private fb: FormBuilder,
+    private auth: AuthService,
+    private route: Router
+  ) {
     this.formLogin = this.fb.group({
-      'email':['', [Validators.required, Validators.email]],
-      'password': ['', [Validators.required]]
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required]],
     });
-    this.error = signal(false);
-    this.navigateTo = this.router.getCurrentNavigation()?.extras.state?.['navigateTo'] || '/dashboard';
+    this.navigateTo =
+      this.router.getCurrentNavigation()?.extras.state?.['navigateTo'] ||
+      '/dashboard';
   }
 
-  //metodo onsubmit()
-  
-async onSubmit(){
-  console.log(this.formLogin.value);
-    try{
-      this.error.set(false);
-      const response = await this.auth.login(this.formLogin.value as any);
-      this.router.navigate([this.navigateTo]);
+  async onSubmit() {
+    if (this.formLogin.invalid) {
+      this.formLogin.markAllAsTouched();
+      return;
     }
-    catch(error){
+    try {
+      await this.auth.login(
+        this.formLogin.get('email')?.value,
+        this.formLogin.get('password')?.value
+      );
+      this.route.navigate([this.navigateTo]);
+    } catch (err: any) {
+      console.error('Error:', err);
       this.error.set(true);
     }
-    
   }
 
+  getError(control: string): string {
+    const ctrl = this.formLogin.get(control);
+    if (!ctrl || !ctrl.errors) return '';
 
-  //metodo getError()
-
-  
-  getError(control:string){
-       
-    switch(control){
-      case 'email':
-        if(this.formLogin.controls.email.errors!=null && 
-           Object.keys(this.formLogin.controls.email.errors).includes('required'))
-           return "El campo email es requerido";
-        else if(this.formLogin.controls.email.errors!=null && 
-           Object.keys(this.formLogin.controls.email.errors).includes('email'))
-           return "El email no es correcto";
-        
-        break;
-      case 'password': 
-        if(this.formLogin.controls.password.errors!=null && 
-           Object.keys(this.formLogin.controls.password.errors).includes('required'))
-           return "El campo email es requerido";
-        break;
-      default:return "";
+    if (control === 'email') {
+      if (ctrl.errors['required']) return 'El email es requerido';
+      if (ctrl.errors['email']) return 'Email inválido';
     }
-    return "";
+    if (control === 'password') {
+      if (ctrl.errors['required']) return 'La contraseña es requerida';
+    }
+    return '';
   }
-
-  
 }
-
-
-/* FORMULARIO CON ERRORES Y VALIDACIONES 
-<div class="min-h-screen flex justify-center items-center">
-  <div
-    class="rounded-md max-w-md w-full bg-gradient-to-br from-blue-600 via-purple-500 to-gray-600"
-  >
-    <h1 class="mt-5 text-center text-white text-2xl font-bold">
-      Iniciar sesión
-    </h1>
-    <p class="mb-5 text-gray-600 text-sm mix-blend-color-dodge text-center">
-      Accede con tus credenciales
-    </p>
-    <form class="px-5" [formGroup]="formLogin" (ngSubmit)="onSubmit()">
-      <div class="mb-3">
-        <label class="block text-white" for="email">Email</label>
-        <div class="relative">
-          <span class="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="size-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
-              />
-            </svg>
-          </span>
-          <input
-            id="email"
-            name="email"
-            autocomplete="username"
-            formControlName="email"
-            placeholder="tu@email"
-            class="px-10 h-8 rounded-sm border w-full"
-            type="text"
-          />
-          
-          
-        </div>
-        @if(formLogin.controls.email.touched && formLogin.controls.email.errors){
-            <span class="text-red-500 mt-3 mix-blend-color-dodge">
-                {{getError('email')}}
-            </span>
-        }
-      </div>
-      <div class="mb-3">
-        <label class="block text-white" for="email">Contraseña</label>
-        <div class="relative">
-          <span class="text-gray-400 absolute left-3 top-1/2 -translate-y-1/2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="size-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-              />
-            </svg>
-          </span>
-
-          <input
-            id="password"
-            name="password"
-            formControlName="password"
-            autocomplete="password"
-            placeholder="tu contraseña"
-            class="px-10 h-8 w-full rounded-sm border"
-            type="password"
-          />
-          <span class="text-gray-400 absolute right-3 top-1/2 -translate-y-1/2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke-width="1.5"
-              stroke="currentColor"
-              class="size-6"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-              />
-            </svg>
-          </span>
-        </div>
-        @if(formLogin.controls.password.touched && formLogin.controls.password.errors){
-            <span class="text-red-500 mt-3 mix-blend-color-dodge">
-                {{getError('password')}}
-            </span>
-        }
-      </div>
-      <button
-        class="rounded-sm mb-3 w-full px-4 py-2 font-medium bg-blue-500 hover:bg-blue-600 border border-blue-400 text-white"
-        type="submit"
-      >
-        Acceder
-      </button>
-      <span>
-        <p>
-          ¿No tienes cuenta?
-        </p>
-        <a [routerLink]="['/register']" [state]="{navigateTo: navigateTo}">Regístrate</a>
-      </span>
-      @if(error()){
-        <span class="text-red-500 font-medium text-sm">
-          <p>
-            Email o contraseña invalidos
-          </p>
-        </span>
-      }
-    </form>
-  </div>
-</div>*/
