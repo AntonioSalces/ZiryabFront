@@ -2,13 +2,12 @@ import { Component, signal } from '@angular/core';
 import { inject } from '@angular/core';
 import { FormBuilder, Validators, ReactiveFormsModule, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/firebase-auth.service'; // ← RUTA CORREGIDA
+import { AuthService } from '../../../core/services/firebase-auth.service';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, CommonModule, RouterLink],
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
 })

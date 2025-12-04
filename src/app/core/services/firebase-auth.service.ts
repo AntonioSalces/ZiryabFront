@@ -1,66 +1,84 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { getAuth, signInWithCustomToken } from 'firebase/auth';
+import { 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  User,
+  createUserWithEmailAndPassword
+} from 'firebase/auth';
+import { auth } from '../config/firebase.config';
+import { Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:3000/api/auth';
-  private auth = getAuth();
+  user$: Observable<User | null>;
 
-  constructor(private http: HttpClient) {}
+  constructor() {
+    this.user$ = new Observable(observer => {
+      return onAuthStateChanged(auth, observer);
+    });
+  }
 
-  // LOGIN: envía email/password al backend
   async login(email: string, password: string) {
-    const response = await this.http
-      .post<{ idToken: string; uid: string }>(`${this.apiUrl}/login`, {
-        email,
-        password,
-      })
-      .toPromise();
-
-    if (response?.idToken) {
-      await signInWithCustomToken(this.auth, response.idToken);
-      localStorage.setItem('idToken', response.idToken);
-      localStorage.setItem('uid', response.uid);
-      return response; // ← AGREGA ESTO
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
+    } catch (error: any) {
+      console.error('Error en login:', error);
+      throw this.handleAuthError(error);
     }
-    throw new Error('No idToken received'); // ← O lanza error
   }
 
-  // REGISTER: envía email/password al backend
   async register(email: string, password: string) {
-    const response = await this.http
-      .post<{ idToken: string; uid: string }>(`${this.apiUrl}/register`, {
-        email,
-        password,
-      })
-      .toPromise();
-
-    if (response?.idToken) {
-      await signInWithCustomToken(this.auth, response.idToken);
-      localStorage.setItem('idToken', response.idToken);
-      localStorage.setItem('uid', response.uid);
-      return response; // ← AGREGA ESTO
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      return userCredential.user;
+    } catch (error: any) {
+      throw this.handleAuthError(error);
     }
-    throw new Error('No idToken received'); // ← O lanza error
   }
 
-  // LOGOUT
   async logout() {
-    await this.auth.signOut();
-    localStorage.removeItem('idToken');
-    localStorage.removeItem('uid');
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error('Error en logout:', error);
+      throw error;
+    }
   }
 
-  // Obtener token actual
-  getToken(): string | null {
-    return localStorage.getItem('idToken');
+  getCurrentUser() {
+    return auth.currentUser;
   }
 
-  // Verificar si está autenticado
-  isAuthenticated(): boolean {
-    return !!this.getToken();
+  private handleAuthError(error: any): Error {
+    let message = 'Error de autenticación';
+    
+    switch (error.code) {
+      case 'auth/user-not-found':
+        message = 'Usuario no encontrado';
+        break;
+      case 'auth/wrong-password':
+        message = 'Contraseña incorrecta';
+        break;
+      case 'auth/email-already-in-use':
+        message = 'El email ya está en uso';
+        break;
+      case 'auth/weak-password':
+        message = 'La contraseña es demasiado débil';
+        break;
+      case 'auth/invalid-email':
+        message = 'Email inválido';
+        break;
+      case 'auth/invalid-credential':
+        message = 'Credenciales inválidas';
+        break;
+      default:
+        message = error.message || 'Error desconocido';
+    }
+    
+    return new Error(message);
   }
 }
