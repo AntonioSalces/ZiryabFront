@@ -1,0 +1,10 @@
+{
+    "buildCommand": "ng build --configuration production",
+    "outputDirectory": "dist/login-en-angular",
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://ziryabback.onrender.com/api/:path*"
+        }
+    ]
+}
