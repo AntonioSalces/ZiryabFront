@@ -1,0 +1,12 @@
+# Blueprint Render — SPA Angular (CDN estático)
+# Si ya despliegas el front desde el Blueprint de ZiryabBack, no hace falta Apply aquí.
+services:
+  - type: web
+    name: ziryabfront
+    runtime: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist/login-en-angular/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
