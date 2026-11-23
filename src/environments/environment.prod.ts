@@ -4,7 +4,7 @@
  */
 export const environment = {
     production: true,
-    apiUrl: 'https://ziryabback.onrender.com/api',
+    apiUrl: 'https://ziryabback-rxoi.onrender.com/api',
     currentSchoolYear: '2024-2025',
     substituteEligibility: {
         maxWeeklyHours: 10,
